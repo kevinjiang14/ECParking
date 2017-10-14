@@ -1,6 +1,6 @@
 # ECParking
 
-Kevin Jiang, Hugo Meza, Syed Azmain, Frankie Ta
+*By: Kevin Jiang, Hugo Meza, Syed Azmain, Frankie Ta*
 
 An Android application to provide street parking information.
 
