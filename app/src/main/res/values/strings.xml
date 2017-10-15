@@ -9,6 +9,9 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_temp">TempActivity</string>
 
+    <string name="com.twitter.sdk.android.CONSUMER_KEY">tUOOTLzlV4TndS25gcHu9z7pa</string>
+    <string name="com.twitter.sdk.android.CONSUMER_SECRET">uCyARGiijC3xn5wYg08CueVWNsjh1RHXnHKHwaquoU0YG0ln8P</string>
+
     <string-array name="choices">
         <item>Select</item>
         <item>Yes</item>

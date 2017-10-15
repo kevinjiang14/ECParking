@@ -1,14 +1,19 @@
 package com.example.kevin.ecparking;
 
 import android.Manifest;
+import android.content.Intent;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -27,6 +32,7 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.twitter.sdk.android.core.Twitter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -44,10 +50,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     float[] results = new float[1];
     final Map<Polyline, String> polylines = new HashMap<>();
 
+    public Button but1;
+    public void init(){
+        but1 = (Button) findViewById(R.id.button5);
+        but1.setOnClickListener(new View.OnClickListener() {
+            @Override
+
+            public void onClick(View v) {
+
+                Intent intent = null;
+                try {
+                    getApplicationContext().getPackageManager().getPackageInfo("com.twitter.android", 0);
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse("twitter://user?screen_name=NYCASP"));
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                }catch (Exception e){
+                    intent = new Intent(Intent.ACTION_VIEW, Uri.parse("http://twitter.com/NYCASP"));
+                }
+                startActivity(intent);
+            }
+        });
+    }
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
+        init();
 
         if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             checkLocationPermission();
@@ -56,6 +84,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        Twitter.initialize(this);
     }
 
 
