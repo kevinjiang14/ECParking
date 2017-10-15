@@ -19,31 +19,34 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.PopupWindow;
+import android.widget.RelativeLayout;
+import android.widget.TextView;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.List;
 
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
+    private int REQUEST_CODE = 77;
+
     private GoogleMap mMap;
     private FusedLocationProviderClient mFusedLocationClient;
     private LatLng currentlocation;
-//    private Intent changesIntent;
-    Point p;
+    private Intent updateIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,16 +56,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-//        changesIntent = new Intent(MapsActivity.this, SMSActivity.class);
-
-//        Button change = (Button)findViewById(R.id.change);
-//        change.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                startActivity(changesIntent);
-//            }
-//        });
     }
 
 
@@ -78,16 +71,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] { android.Manifest.permission.ACCESS_COARSE_LOCATION}, 77 );
+            ActivityCompat.requestPermissions(this, new String[] { android.Manifest.permission.ACCESS_COARSE_LOCATION}, REQUEST_CODE);
         }
 
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION}, 77 );
+            ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_CODE);
         }
 
         mMap = googleMap;
-        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
+        // Get last known location
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         mFusedLocationClient.getLastLocation()
                 .addOnSuccessListener(this, new OnSuccessListener<Location>() {
                     @Override
@@ -97,27 +91,56 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                             // Logic to handle location object
                             currentlocation = new LatLng(location.getLatitude(), location.getLongitude());
 
-                            // Add a marker in current location and move the camera
-                            mMap.addMarker(new MarkerOptions().position(currentlocation).title("Marker in Columbia University"));
+                            // Move camera to current location
                             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(currentlocation, 15f));
-//                            DrawLine();
                         }
                     }
                 });
 
-
+        // Polylines onClickListeners
         mMap.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
             @Override
             public void onPolylineClick(Polyline polyline) {
                 Point point = getMidPointofLine(polyline);
-                showPopup(MapsActivity.this, point);
+                showPopup(MapsActivity.this, point, polyline);
             }
         });
-        // Add a line
-        Polyline polyline = mMap.addPolyline(new PolylineOptions().clickable(true).add(
-                new LatLng(40.810443, -73.961922),
-                new LatLng(40.809343, -73.959326)
-        ).color(Color.GREEN));
+
+        // Read data file
+        AssetManager assetManager = this.getResources().getAssets();
+        try{
+            InputStream streetDB = assetManager.open("streetDB.txt");
+            readFile(streetDB);
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    // Read from InputStream
+    private void readFile(InputStream streetDB) {
+        try{
+            InputStreamReader reader = new InputStreamReader(streetDB);
+            BufferedReader br = new BufferedReader(reader);
+            String[] data = br.readLine().split(" ");
+            while(data != null) {
+                if (data[4].equals("YES")) {
+                    Polyline polyline = mMap.addPolyline(new PolylineOptions().clickable(true).add(
+                            new LatLng(Double.parseDouble(data[0]), Double.parseDouble(data[1])),
+                            new LatLng(Double.parseDouble(data[2]), Double.parseDouble(data[3]))
+                    ).color(Color.GREEN));
+                } else if (data[4].equals("NO")) {
+                    Polyline polyline = mMap.addPolyline(new PolylineOptions().clickable(true).add(
+                            new LatLng(Double.parseDouble(data[0]), Double.parseDouble(data[1])),
+                            new LatLng(Double.parseDouble(data[2]), Double.parseDouble(data[3]))
+                    ).color(Color.RED));
+                }
+                data = br.readLine().split(" ");
+            }
+        }
+        catch (Exception e){
+            e.printStackTrace();
+        }
     }
 
     private Point getMidPointofLine(Polyline polyline) {
@@ -129,46 +152,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         Point midPoint = new Point((startPoint.x + endPoint.x) / 2, (startPoint.y + endPoint.y) / 2);
 
-//        return mMap.getProjection().fromScreenLocation(midPoint);
         return midPoint;
     }
 
-    private void DrawLine() {
-        AssetManager assetManager = this.getResources().getAssets();
-        StreetsSize Size = new StreetsSize();
-        Size.openFile(assetManager);
-        Size.setSize();
-        Size.closeFile();
-
-        int numOfStreets = Size.getSize();
-
-        Street nextStreetInfo = new Street();
-        nextStreetInfo.openFile();
-        Street street[] = new Street[numOfStreets];
-
-        for(int i = 0; i < numOfStreets; i++) {
-            street[i] = new Street();
-            street[i].inLat = nextStreetInfo.getElement();
-            street[i].inLon = nextStreetInfo.getElement();
-            street[i].endLat = nextStreetInfo.getElement();
-            street[i].endLon = nextStreetInfo.getElement();
-            street[i].ava = nextStreetInfo.getElement();
-            Polyline polyline = mMap.addPolyline(new PolylineOptions().clickable(true).add(
-                    new LatLng(Double.parseDouble(nextStreetInfo.getElement()), Double.parseDouble(nextStreetInfo.getElement())),
-                    new LatLng(Double.parseDouble(nextStreetInfo.getElement()), Double.parseDouble(nextStreetInfo.getElement()))
-            ).color(Color.GREEN));
-        }
-
-        nextStreetInfo.closeFile();
-    }
-
     // The method that displays the popup.
-    private void showPopup(final Activity context, Point p) {
-        int popupWidth = 800;
-        int popupHeight = 600;
-
+    private void showPopup(final Activity context, Point p, Polyline polyline) {
         // Inflate the popup_layout.xml
-        LinearLayout viewGroup = (LinearLayout) context.findViewById(R.id.popup);
+        RelativeLayout viewGroup = (RelativeLayout) context.findViewById(R.id.popup);
         LayoutInflater layoutInflater = (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         View layout = layoutInflater.inflate(R.layout.popup_layout, viewGroup);
@@ -176,12 +166,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Creating the PopupWindow
         final PopupWindow popup = new PopupWindow(context);
         popup.setContentView(layout);
-        popup.setWidth(popupWidth);
-        popup.setHeight(popupHeight);
         popup.setFocusable(true);
 
         // Some offset to align the popup a bit to the right, and a bit down, relative to button's position.
-        int OFFSET_X = 30;
+        int OFFSET_X = -100;
         int OFFSET_Y = 30;
 
         // Clear the default translucent background
@@ -190,13 +178,32 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Displaying the popup at the specified location, + offsets.
         popup.showAtLocation(layout, Gravity.NO_GRAVITY, p.x + OFFSET_X, p.y + OFFSET_Y);
 
+        TextView parkable = (TextView)layout.findViewById(R.id.parkable);
+        if((int)Color.GREEN == polyline.getColor()){
+            parkable.setText("Yes");
+        }
+        else if((int)Color.RED == polyline.getColor()){
+            parkable.setText("No");
+        }
+
+
+
         // Getting a reference to Close button, and close the popup when clicked.
-        Button close = (Button) layout.findViewById(R.id.close);
+        Button close = (Button)layout.findViewById(R.id.cancel);
         close.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 popup.dismiss();
+            }
+        });
+        // Update button functionality
+        updateIntent = new Intent(MapsActivity.this, SMSActivity.class);
+        Button update = (Button)layout.findViewById(R.id.update);
+        update.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(updateIntent);
             }
         });
     }

@@ -12,6 +12,7 @@ import android.widget.Button;
 
 public class SMSActivity extends AppCompatActivity {
     private String twilioNumber = "2012926798";
+    private String message = "something";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,17 +24,26 @@ public class SMSActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.SEND_SMS}, 77 );
         }
 
-        Button submitbutton = (Button)findViewById(R.id.submit);
-        submitbutton.setOnClickListener(new View.OnClickListener() {
+        Button submitButton = (Button)findViewById(R.id.submit);
+        submitButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 SubmitResult();
+            }
+        });
+
+        Button cancelButton = (Button)findViewById(R.id.cancel);
+        cancelButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                finish();
             }
         });
     }
 
     public void SubmitResult(){
         SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage(twilioNumber, null, "Gay", null, null);
+        smsManager.sendTextMessage(twilioNumber, null, message, null, null);
+        finish();
     }
 }
