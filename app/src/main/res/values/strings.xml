@@ -1,4 +1,17 @@
 <resources>
     <string name="app_name">ECParking</string>
     <string name="title_activity_maps">Map</string>
+    <string name="title_activity_second">SecondActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_temp">TempActivity</string>
+
+    <string-array name="choices">
+        <item>Select</item>
+        <item>Yes</item>
+        <item>No</item>
+    </string-array>
 </resources>
