@@ -13,6 +13,7 @@ public class Street {
 	
 	public void openFile() {
 		try {
+			//For practical purposes, file is accessed on the local computer
 			file = new Scanner(new File("C:\\Users\\HgMeza\\Documents\\streetDB.txt"));
 		}
 		catch(Exception e) {
